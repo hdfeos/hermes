@@ -129,6 +129,18 @@ add_test(NAME "TestTrait" COMMAND "${CMAKE_BINARY_DIR}/bin/trait" "-s" "--report
 set_tests_properties("TestTrait" PROPERTIES ENVIRONMENT
 LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/data/asan.supp)
 
+ #------------------------------------------------------------------------------
+# Ordering Trait tests
+#------------------------------------------------------------------------------
+add_executable(prefetching trait_order.cc)
+target_link_libraries(prefetching ${LIBRT} hermes MPI::MPI_CXX
+$<$<BOOL:${HERMES_RPC_THALLIUM}>:thallium>)
+target_compile_definitions(prefetching
+PRIVATE $<$<BOOL:${HERMES_RPC_THALLIUM}>:HERMES_RPC_THALLIUM>)
+add_test(NAME "TestPrefetching" COMMAND prefetching)
+set_tests_properties("TestTrait" PROPERTIES ENVIRONMENT
+LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/data/asan.supp)
+
 #------------------------------------------------------------------------------
 # BufferOrganizer tests
 #------------------------------------------------------------------------------
