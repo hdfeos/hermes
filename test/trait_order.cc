@@ -45,7 +45,6 @@ int main(int argc, char **argv) {
   hapi::Blob get_data(data_size, 255);
   if (hermes->IsApplicationCore()) {
     int app_rank = hermes->GetProcessRank();
-    int app_size = hermes->GetNumProcesses();
 
     hapi::Status status;
     int bytes_per_blob = 1024;
