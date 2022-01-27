@@ -57,8 +57,8 @@ int main(int argc, char **argv) {
     std::string blobz_name = "blobz";
     hapi::Blob bloba, blobb, blobc, blobx, bloby, blobz;
 
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
+    std::random_device rd;  // obtain a random number from hardware
+    std::mt19937 gen(rd());  // seed the generator
     std::uniform_int_distribution<unsigned char> distr(0, 255);
     for (int n = 0; n < bytes_per_blob; ++n) {
       bloba.push_back(distr(gen));
@@ -115,29 +115,31 @@ int main(int argc, char **argv) {
 
     std::vector<int> blob_order{5, 2, 4, 3, 0, 1};
 
-    //auto trait = hermes::api::OrderingTrait(3, hermes::api::NameAscend);
-    //auto trait = hermes::api::OrderingTrait(3, hermes::api::OrderingTrait::NameAscend);
-    //auto trait = hermes::api::OrderingTrait(3, hermes::api::OrderingTrait::NameDescend);
-    auto trait = hermes::api::OrderingTrait(3, hermes::api::OrderingTrait::Importance);
-    //auto trait = hermes::api::OrderingTrait(3, nullptr, blob_order);
+    // auto trait = hermes::api::OrderingTrait(3, hermes::api::NameAscend);
+    // auto trait =
+    //   hermes::api::OrderingTrait(3, hermes::api::OrderingTrait::NameAscend);
+    // auto trait =
+    //   hermes::api::OrderingTrait(3, hermes::api::OrderingTrait::NameDescend);
+    auto trait = hermes::api::OrderingTrait(3, hapi::OrderingTrait::Importance);
+    // auto trait = hermes::api::OrderingTrait(3, nullptr, blob_order);
     LOG(INFO) << "trait.cc VBucket Attach";
     status = vb.Attach(&trait);
     Assert(status.Succeeded());
 
     hapi::Blob retrieved_blob;
-    //size_t sizes = bkt.Get(blobc_name, retrieved_blob, ctx);
+    // size_t sizes = bkt.Get(blobc_name, retrieved_blob, ctx);
     size_t sizes = vb.Get(blobc_name, &bkt, retrieved_blob);
-    //size_t sizes = vb.Get(blobc_name, &bkt, retrieved_blob, ctx);
+    // size_t sizes = vb.Get(blobc_name, &bkt, retrieved_blob, ctx);
 
     retrieved_blob.resize(sizes);
 
-    //sizes = bkt.Get(blobc_name, retrieved_blob, ctx);
+    // sizes = bkt.Get(blobc_name, retrieved_blob, ctx);
     sizes = vb.Get(blobc_name, &bkt, retrieved_blob);
-    //sizes = vb.Get(blobc_name, &bkt, retrieved_blob, ctx);
+    // sizes = vb.Get(blobc_name, &bkt, retrieved_blob, ctx);
     Assert(blobc == retrieved_blob);
     Assert(sizes == retrieved_blob.size());
 
-    //trait.Sort();
+    // trait.Sort();
 
     hermes->AppBarrier();
     status = bkt.Destroy();

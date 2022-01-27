@@ -191,7 +191,7 @@ Status VBucket::Attach(Trait* trait, Context& ctx) {
   } else {
     ret = TRAIT_EXISTS_ALREADY;
     LOG(ERROR) << ret.Msg();
-  } 
+  }
 
   return ret;
 }
@@ -346,8 +346,7 @@ size_t VBucket::Get(const std::string &name, Bucket *bkt, Blob &user_blob,
   return ret;
 }
 
-size_t VBucket::Get(const std::string &name, Bucket *bkt, Blob &user_blob)
-{
+size_t VBucket::Get(const std::string &name, Bucket *bkt, Blob &user_blob) {
   size_t result = Get(name, bkt, user_blob, ctx_);
 
   return result;
@@ -366,7 +365,7 @@ size_t VBucket::Get(const std::string &name, Bucket *bkt, void *user_blob,
     return result;
 
   LOG(INFO) << "HERMES_ORDER_TRAIT = " << HERMES_ORDER_TRAIT;
-  //prefetching
+  // prefetching
   Trait* selected_trait = NULL;
   for (const auto& t : attached_traits_) {
     LOG(INFO) << "iterate trait " << t->id;

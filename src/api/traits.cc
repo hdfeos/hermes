@@ -96,11 +96,13 @@ void PersistTrait::onUnlink(HermesPtr hermes, TraitInput &input, Trait *trait) {
 }
 
 static BlobID GetBlobIdByName(HermesPtr hermes,
-                              const std::pair<std::string, std::string> blob_name) {
+                              const std::pair<std::string,
+                              std::string> blob_name) {
   SharedMemoryContext *context = &hermes->context_;
   RpcContext *rpc = &hermes->rpc_;
   BucketID bucket_id = GetBucketId(context, rpc, blob_name.second.c_str());
-  BlobID blob_id = GetBlobId(context, rpc, blob_name.first.c_str(), bucket_id, false);
+  BlobID blob_id = GetBlobId(context, rpc, blob_name.first.c_str(), bucket_id,
+                             false);
 
   return blob_id;
 }
@@ -114,7 +116,8 @@ static size_t GetBlobSize(HermesPtr hermes,
     u8 arena_memory[KILOBYTES(4)];
     Arena arena = {};
     InitArena(&arena, sizeof(arena_memory), arena_memory);
-    blob_size = GetBlobSizeById(&hermes->context_, &hermes->rpc_, &arena, blob_id);
+    blob_size = GetBlobSizeById(&hermes->context_, &hermes->rpc_, &arena,
+                                blob_id);
   } else {
     LOG(ERROR) <<"Blob size error from blob " << blob_name.first
                << " in bucket " << blob_name.second;
@@ -125,6 +128,7 @@ static size_t GetBlobSize(HermesPtr hermes,
 bool OrderingTrait::NameAscend(HermesPtr hermes,
                 const std::pair<std::string, std::string> first_blob,
                 const std::pair<std::string, std::string> second_blob) {
+  (void)hermes;
   LOG(INFO) << "Predefined NameAscend order";
   if (first_blob.second == second_blob.second)
     return (first_blob.first < second_blob.first);
@@ -135,6 +139,7 @@ bool OrderingTrait::NameAscend(HermesPtr hermes,
 bool OrderingTrait::NameDescend(HermesPtr hermes,
                  const std::pair<std::string, std::string> first_blob,
                  const std::pair<std::string, std::string> second_blob) {
+  (void)hermes;
   LOG(INFO) << "Predefined NameDescend order";
   if (first_blob.second == second_blob.second)
     return (first_blob.first > second_blob.first);
@@ -167,8 +172,10 @@ bool OrderingTrait::Importance(HermesPtr hermes,
   LOG(INFO) << "Predefined Importance order";
   BlobID blob_id1 = GetBlobIdByName(hermes, first_blob);
   BlobID blob_id2 = GetBlobIdByName(hermes, second_blob);
-  f32 score1 = GetBlobImportanceScore(&hermes->context_, &hermes->rpc_, blob_id1);
-  f32 score2 = GetBlobImportanceScore(&hermes->context_, &hermes->rpc_, blob_id2);
+  f32 score1 = GetBlobImportanceScore(&hermes->context_, &hermes->rpc_,
+                                      blob_id1);
+  f32 score2 = GetBlobImportanceScore(&hermes->context_, &hermes->rpc_,
+                                      blob_id2);
 
   return (score1 > score2);
 }
@@ -178,9 +185,9 @@ OrderingTrait::OrderingTrait(u8 num_blob_prefetch, TraitOrder order_func,
     : Trait(HERMES_ORDER_TRAIT, TraitIdArray(), TraitType::DATA),
       hermes_(nullptr),
       blobs_order_(),
+      blobs_customerized_order_(vect),
       num_blob_prefetch_(num_blob_prefetch),
-      order_func_(order_func),
-      blobs_customerized_order_(vect) {
+      order_func_(order_func) {
   this->onAttachFn = std::bind(&OrderingTrait::onAttach, this,
                                std::placeholders::_1, std::placeholders::_2,
                                std::placeholders::_3);
@@ -210,8 +217,9 @@ void OrderingTrait::Sort(HermesPtr hermes) {
     return;
   } else if (this->order_func_ && this->blobs_order_.size() > 0) {
      LOG(INFO) << "predefined sorting method";
-     std::sort(this->blobs_order_.begin(), this->blobs_order_.end(), std::bind(order_func_,
-               hermes, std::placeholders::_1, std::placeholders::_2));
+     std::sort(this->blobs_order_.begin(), this->blobs_order_.end(),
+               std::bind(order_func_, hermes, std::placeholders::_1,
+                         std::placeholders::_2));
   }
   LOG(INFO) << "After sort";
   for (auto iter=blobs_order_.begin(); iter != blobs_order_.end();
@@ -223,9 +231,10 @@ void OrderingTrait::Sort(HermesPtr hermes) {
 }
 
 void OrderingTrait::onAttach(HermesPtr hermes, VBucketID id, Trait *trait) {
+  (void)trait;
   LOG(INFO) << "OrderingTrait::onAttach";
   if (blobs_order_.size() == 0) {
-LOG(INFO) << "empty list";
+    LOG(INFO) << "empty list";
     SharedMemoryContext *context = &hermes->context_;
     RpcContext *rpc = &hermes->rpc_;
 
@@ -252,12 +261,15 @@ void OrderingTrait::onDetach(HermesPtr hermes, VBucketID id, Trait *trait) {
 }
 
 void OrderingTrait::onLink(HermesPtr hermes, TraitInput &input, Trait *trait) {
+  (void)trait;
   LOG(INFO) << "OrderingTrait::onLink";
-  this->blobs_order_.push_back(std::make_pair(input.blob_name, input.bucket_name));
+  this->blobs_order_.push_back(std::make_pair(input.blob_name,
+                                              input.bucket_name));
   this->Sort(hermes);
 }
 
-void OrderingTrait::onUnlink(HermesPtr hermes, TraitInput &input, Trait *trait) {
+void OrderingTrait::onUnlink(HermesPtr hermes, TraitInput &input,
+                             Trait *trait) {
   (void)hermes;
   (void)trait;
   this->blobs_order_.erase(std::remove(this->blobs_order_.begin(),
@@ -267,8 +279,7 @@ void OrderingTrait::onUnlink(HermesPtr hermes, TraitInput &input, Trait *trait) 
 }
 
 void OrderingTrait::GetNextN(HermesPtr hermes, std::string blob_name,
-                             std::string bkt_name, u8 num_blob_prefetch)
-{
+                             std::string bkt_name, u8 num_blob_prefetch) {
   LOG(INFO) << "GetNextN from vbucket list";
   std::vector<std::pair<std::string, std::string>>::iterator findIter =
   std::find(blobs_order_.begin(), blobs_order_.end(),
@@ -284,20 +295,24 @@ void OrderingTrait::GetNextN(HermesPtr hermes, std::string blob_name,
     LOG(INFO) << "predefined sorting";
     for (auto i {1}; i <= num_blob_prefetch; ++i) {
       if (findIter+i != blobs_order_.end()) {
-        BucketID bucket_id = GetBucketId(context, rpc, (findIter+i)->second.c_str());
+        BucketID bucket_id = GetBucketId(context, rpc,
+                                         (findIter+i)->second.c_str());
         LOG(INFO) << "bucket_id: " << bucket_id.as_int;
-        BlobID blob_id = GetBlobId(context, rpc, (findIter+i)->first, bucket_id, true);
+        BlobID blob_id = GetBlobId(context, rpc, (findIter+i)->first, bucket_id,
+                                   true);
         LOG(INFO) << "blob_id: " << blob_id.as_int;
-        LOG(INFO) << "OrganizeBlob predefined order for blob " << (findIter+i)->first;
-        OrganizeBlob(context, rpc, bucket_id, (findIter+i)->first.c_str(),  0, 1);
+        LOG(INFO) << "OrganizeBlob predefined order for blob "
+                  << (findIter+i)->first;
+        OrganizeBlob(context, rpc, bucket_id, (findIter+i)->first.c_str(),  0,
+                     1);
       }
     }
   } else {
     LOG(INFO) << "customerized sorting";
     size_t distance = std::distance(blobs_order_.begin(), findIter);
     LOG(INFO) << "distance is " << distance;
-    std::vector<int>::iterator find_order = std::find(blobs_customerized_order_.begin(),
-                                            blobs_customerized_order_.end(), distance);
+    auto find_order = std::find(blobs_customerized_order_.begin(),
+                                blobs_customerized_order_.end(), distance);
     if (blobs_customerized_order_.end() == find_order) {
       LOG(ERROR) << "NOT found blob order in OrderingTrait";
       return;
@@ -311,7 +326,7 @@ void OrderingTrait::GetNextN(HermesPtr hermes, std::string blob_name,
         break;
       }
       LOG(INFO) << "next blob is " << *next;
-      if (*next > blobs_order_.size()) {
+      if (((size_t)*next) > blobs_order_.size()) {
         LOG(ERROR) << "Blob order number out of range";
         return;
       }
@@ -320,10 +335,13 @@ void OrderingTrait::GetNextN(HermesPtr hermes, std::string blob_name,
       std::advance(blob_to_fetch, *next);
       LOG(INFO) << "fetch blob (" << blob_to_fetch->first << ", "
                 << blob_to_fetch->second << ")";
-      BucketID bucket_id = GetBucketId(context, rpc, blob_to_fetch->second.c_str());
-      BlobID blob_id = GetBlobId(context, rpc, blob_to_fetch->first, bucket_id, true);
+      BucketID bucket_id = GetBucketId(context, rpc,
+                                       blob_to_fetch->second.c_str());
+      BlobID blob_id = GetBlobId(context, rpc, blob_to_fetch->first, bucket_id,
+                                 true);
       LOG(INFO) << "blob_id: " << blob_id.as_int;
-      OrganizeBlob(context, rpc, bucket_id, blob_to_fetch->first.c_str(),  0, 1);
+      OrganizeBlob(context, rpc, bucket_id, blob_to_fetch->first.c_str(),  0,
+                   1);
     }
   }
 }

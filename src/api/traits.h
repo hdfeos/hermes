@@ -91,6 +91,7 @@ struct OrderingTrait : public Trait {
   void GetNextN(HermesPtr hermes, std::string blob_name,
                 std::string bkt_name, u8 num_blob_prefetch);
   void Sort(HermesPtr hermes);
+
  public:
   u8 num_blob_prefetch_;
   TraitOrder order_func_;
