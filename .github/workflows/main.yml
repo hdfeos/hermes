@@ -114,6 +114,6 @@ jobs:
           push: false
           # If the ref is a tag, we're tagging a release, so set the docker tag
           # to the github tag. Otherwise, set the docker tag to 'latest'.
-          tags: hdfgroup/hermes-${{matrix.dockerfile}}:${{ github.ref_type == tag && github.ref_name || latest }}
+          tags: hdfgroup/hermes-${{matrix.dockerfile}}:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
           # cache-from: type=registry,ref=hdfgroup/hermes-${{matrix.dockerfile}}:buildcache
           # cache-to: type=registry,ref=hdfgroup/hermes-${{matrix.dockerfile}}:buildcache,mode=max
