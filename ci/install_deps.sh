@@ -7,6 +7,7 @@ set -o pipefail
 INSTALL_DIR="${HOME}/${LOCAL}"
 SPACK_DIR=${INSTALL_DIR}/spack
 MOCHI_REPO_DIR=${INSTALL_DIR}/mochi-spack-packages
+
 THALLIUM_VERSION=0.8.3
 GOTCHA_VERSION=develop
 CATCH2_VERSION=2.13.3
@@ -16,6 +17,9 @@ HDF5_VERSION=1_13_0
 
 echo "Installing dependencies at ${INSTALL_DIR}"
 mkdir -p ${INSTALL_DIR}
+
+mkdir -p ${HOME}/.spack
+cp ci/packages.yaml ${HOME}/.spack/packages.yaml
 
 # HDF5
 # TODO: Use spack package once 1.13.0 is available in a release (currently
@@ -42,27 +46,38 @@ set +x
 . ${SPACK_DIR}/share/spack/setup-env.sh
 set -x
 
-cp ci/packages.yaml ${SPACK_DIR}/etc/spack/packages.yaml
 MOCHI_REPO=https://github.com/mochi-hpc/mochi-spack-packages.git
-# TODO(chogan): We pin this commit because in future commits they add features
-# of spack that are not included in the version we use. Next time there's a new
-# spack release, we can tryb using the head of `main` in mochi-spack-packages.
-MOCHI_SPACK_PACKAGES_COMMIT=f015ae93717ac3b81972c55116c3b91aa9c645e4
 git clone ${MOCHI_REPO} ${MOCHI_REPO_DIR}
 pushd ${MOCHI_REPO_DIR}
+# This is used by ci/install_deps.sh and the Dockerfiles in docker/
+# TODO(chogan): We pin this commit because in future commits they add features
+# of spack that are not included in the version we use. Next time there's a new
+# spack release, we can try using the head of `main` in mochi-spack-packages.
+MOCHI_SPACK_PACKAGES_COMMIT=f015ae93717ac3b81972c55116c3b91aa9c645e4
 git checkout ${MOCHI_SPACK_PACKAGES_COMMIT}
 popd
 
+set +x
 spack repo add ${MOCHI_REPO_DIR}
 spack repo add ./ci/hermes
+set -x
 
 THALLIUM_SPEC="mochi-thallium~cereal@${THALLIUM_VERSION} ^mercury~boostsys"
 CATCH2_SPEC="catch2@${CATCH2_VERSION}"
 ORTOOLS_SPEC="gortools@${ORTOOLS_VERSION}"
 
 spack install ${THALLIUM_SPEC} ${CATCH2_SPEC} ${ORTOOLS_SPEC}
-SPACK_STAGING_DIR=~/spack_staging
+
+if [[ "$#" -eq 0 ]]; then
+    SPACK_STAGING_DIR=~/spack_staging
+else
+    # Create view directly in the INSTALL_DIR (used from Dockerfile)
+    SPACK_STAGING_DIR=${INSTALL_DIR}
+fi
+
 mkdir -p ${SPACK_STAGING_DIR}
 spack view --verbose symlink ${SPACK_STAGING_DIR} ${THALLIUM_SPEC} ${CATCH2_SPEC} ${ORTOOLS_SPEC}
 
-cp -LRnv ${SPACK_STAGING_DIR}/* ${INSTALL_DIR}
+if [[ "$#" -eq 0 ]]; then
+    cp -LRnv ${SPACK_STAGING_DIR}/* ${INSTALL_DIR}
+fi
