@@ -111,7 +111,7 @@ jobs:
           context: ./
           file: ./docker/${{matrix.dockerfile}}.Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
-          push: false
+          push: ${{ github.ref_type == 'tag' || github.ref_name == 'master' }}
           # If the ref is a tag, we're tagging a release, so set the docker tag
           # to the github tag. Otherwise, set the docker tag to 'latest'.
           tags: hdfgroup/hermes-${{matrix.dockerfile}}:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
