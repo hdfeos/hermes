@@ -89,12 +89,19 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
   build-docker-images:
+    if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-20.04
     strategy:
       # user depends on dev depends on deps, so don't run in parallel
       max-parallel: 1
       matrix:
-        dockerfile: ['deps', 'dev', 'user']
+        include:
+          - dockerfile: deps
+            tag: hermes-deps
+          - dockerfile: dev
+            tag: hermes-dev
+          - dockerfile: user
+            tag: hermes
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -111,9 +118,5 @@ jobs:
           context: ./
           file: ./docker/${{matrix.dockerfile}}.Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
-          push: ${{ github.ref_type == 'tag' || github.ref_name == 'master' }}
-          # If the ref is a tag, we're tagging a release, so set the docker tag
-          # to the github tag. Otherwise, set the docker tag to 'latest'.
-          tags: hdfgroup/hermes-${{matrix.dockerfile}}:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
-          # cache-from: type=registry,ref=hdfgroup/hermes-${{matrix.dockerfile}}:buildcache
-          # cache-to: type=registry,ref=hdfgroup/hermes-${{matrix.dockerfile}}:buildcache,mode=max
+          push: true
+          tags: hdfgroup/${{matrix.tag}}:latest

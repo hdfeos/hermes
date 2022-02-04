@@ -4,12 +4,23 @@ set -x
 set -e
 set -o pipefail
 
-mkdir build
+mkdir -p build
 pushd build
+
+: ${RUN_TESTS:-1}
+: ${INSTALL_HERMES:-0}
 
 INSTALL_PREFIX="${HOME}/${LOCAL}"
 
-export CXXFLAGS="${CXXFLAGS} -std=c++17 -Werror -Wall -Wextra"
+if [[ ! -z "${DEBUG}" ]]; then
+    BUILD_TYPE=-DCMAKE_BUILD_TYPE=Debug
+    DBG_FLAGS="-ggdb3 -O0 -Wall -Wextra"
+else
+    BUILD_TYPE=-DCMAKE_BUILD_TYPE=Release
+    DBG_FLAGS="-g -Wall -Wextra -Werror"
+fi
+
+CXXFLAGS="-std=c++17 ${DBG_FLAGS}"                         \
 cmake                                                      \
     -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}               \
     -DCMAKE_PREFIX_PATH=${INSTALL_PREFIX}                  \
@@ -34,6 +45,13 @@ cmake                                                      \
     ..
 
 cmake --build . -- -j4
-ctest -VV
+
+if [[ "${RUN_TESTS}" -eq "1" ]]; then
+    ctest -VV
+fi
+
+if [[ "${INSTALL_HERMES}" -eq "1" ]]; then
+    make install
+fi
 
 popd
