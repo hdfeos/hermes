@@ -36,7 +36,7 @@ jobs:
           file: ./docker/dev.Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: hdfgroup/hermes-dev:latest
+          tags: hdfeos/hermes-dev:latest
       - name: Build and push user.Dockerfile
         uses: docker/build-push-action@v4
         with:
