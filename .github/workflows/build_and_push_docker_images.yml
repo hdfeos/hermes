@@ -2,14 +2,14 @@ name: Build and Push Docker Images
 on:
   push:
   workflow_dispatch:
-    inputs:
-      build_docker_images:
-        description: 'If ''true'', force a build of the docker images and push them to dockerhub'
-        required: false
-        default: false
+#    inputs:
+#      build_docker_images:
+#        description: 'If ''true'', force a build of the docker images and push them to dockerhub'
+#        required: false
+#        default: false
 jobs:
   build-docker-images:
-    if: ${{ github.ref_type == 'tag' || github.event.inputs.build_docker_images }}
+#    if: ${{ github.ref_type == 'tag' || github.event.inputs.build_docker_images }}
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
